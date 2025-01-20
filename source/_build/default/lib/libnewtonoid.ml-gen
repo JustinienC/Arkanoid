@@ -18,9 +18,6 @@ module Input = Libnewtonoid__Input
 (** @canonical Libnewtonoid.Iterator *)
 module Iterator = Libnewtonoid__Iterator
 
-(** @canonical Libnewtonoid.Physics *)
-module Physics = Libnewtonoid__Physics
-
 (** @canonical Libnewtonoid.Quadtree *)
 module Quadtree = Libnewtonoid__Quadtree
 

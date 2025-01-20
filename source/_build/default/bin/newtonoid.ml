@@ -60,8 +60,8 @@ let draw_paddle (paddle:etat_racket) =
     (int_of_float h)
 
 let draw_state (state : etat)=
-  (* Fond noir *)
-  Graphics.set_color Graphics.black;
+  (* Fond de couleur *)
+  Graphics.set_color (Graphics.rgb 40 40 40);  
   Graphics.fill_rect 0 0 800 600;
   
   (* Dessiner tous les éléments *)

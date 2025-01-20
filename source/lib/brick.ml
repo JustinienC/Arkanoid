@@ -120,6 +120,31 @@ module BrickSet = struct
             else Brick.Normal
           in
           let new_brick = Brick.create_brick 
+            (x, y +. 400.)  (* Ajout de 400 pour monter les briques *)
+            brick_width 
+            brick_height
+            1  
+            (10 * (rows - row_idx))
+            brick_type
+          in
+          create_cols (x +. brick_width +. spacing) (col_idx + 1) (new_brick :: acc)
+      in
+      create_cols spacing 0 []
+    (* let create_row y row_idx =
+      let rec create_cols x col_idx acc =
+        if col_idx >= cols then acc
+        else
+          let brick_type = 
+            if Random.float 1.0 < 0.1 then 
+              Brick.PowerUp (
+                match Random.int 3 with
+                | 0 -> Brick.EnlargePaddle
+                | 1 -> Brick.SpeedUp
+                | _ -> Brick.MultiplyBall
+              )
+            else Brick.Normal
+          in
+          let new_brick = Brick.create_brick 
             (x, y)
             brick_width 
             brick_height
@@ -128,8 +153,8 @@ module BrickSet = struct
             brick_type
           in
           create_cols (x +. brick_width +. spacing) (col_idx + 1) (new_brick :: acc)
-      in
-      create_cols spacing 0 []
+      in *)
+      (* create_cols spacing 0 [] *)
     in
     
     let rec create_rows y row_idx acc =
