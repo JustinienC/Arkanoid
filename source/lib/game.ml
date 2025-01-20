@@ -1,104 +1,117 @@
 
-(* game.ml *)
-open Type
 open Iterator
-open Input
+open Type
+open Brick
+open Gamestate
 
-let initial_state = {
-  balle = {
-    pos = (400., 300.);
-    vel = (2., -2.);
-    radius = 5.;
-  };
-  racket = {
-    pos = (350., 50.);
-    dim = (100., 10.);
-    vel = (0., 0.);
-  };
-  score = 0;
-  lives = 3;
-}
 
-let update_ball_position dt ball = 
-  let (x, y) = ball.pos in
-  let (vx, vy) = ball.vel in
-  let gravity = 0.1 in  (* Légère gravité *)
-  let new_vy = vy -. (gravity *. dt) in
-  {ball with 
-    pos = (x +. vx *. dt, y +. new_vy *. dt);
-    vel = (vx, new_vy)
+let game_hello () = 
+  print_endline "Bienvenue dans Newtonoid!"
+  
+module Game = struct
+
+  (* Configuration initiale *)
+  let initial_state = {
+    ball = {
+      pos = (400., 300.);
+      vel = (2., -2.);
+      radius = 5.
+    };
+    paddle = {
+      pos = (350., 50.);
+      dim = (100., 10.);
+      vel = (0., 0.)
+    };
+    bricks = BrickSet.create_grid 5 8 80. 20. 10.;
+    score = 0;
+    lives = 3;
+    running = true
   }
 
-let update_racket_position dt mouse_x racket =
-  let (_, y) = racket.pos in
-  let target_x = mouse_x -. (fst racket.dim) /. 2. in
-  let current_x = fst racket.pos in
-  let dx = target_x -. current_x in
-  let new_vx = dx *. 5. in
-  {racket with 
-    pos = (current_x +. new_vx *. dt, y);
-    vel = (new_vx, 0.)
-  }
+  (* Création d'un nouvel état à partir de l'entrée souris *)
+  let create_game_state (mouse_x, _) =
+    let paddle_x = max 10. (min (790. -. 100.) mouse_x) in
+    { initial_state with
+      paddle = { initial_state.paddle with pos = (paddle_x, 50.) }
+    }
 
-let check_wall_collision ball box =
-  let (x, y) = ball.pos in
-  let (vx, vy) = ball.vel in
-  let bounce_factor = 1.01 in  (* Légère accélération au rebond *)
-  
-  let new_vx = 
-    if x <= box.infx || x >= box.supx then
-      -.vx *. bounce_factor
-    else vx in
-  
-  let new_vy =
-    if y <= box.infy || y >= box.supy then
-      -.vy *. bounce_factor
-    else vy in
-  
-  {ball with vel = (new_vx, new_vy)}
+  (* Gestion des collisions avec les murs *)
+  let handle_wall_collision ball =
+    let (x, y) = ball.pos in
+    let (vx, vy) = ball.vel in
+    let new_vx = if x <= 10. || x >= 790. then -.vx else vx in
+    let new_vy = if y <= 10. || y >= 590. then -.vy else vy in
+    { ball with vel = (new_vx, new_vy) }
 
-let update_game_state dt mouse_input state =
-  let mouse_x, _ = mouse_input in
-  let new_racket = update_racket_position dt mouse_x state.racket in
-  let new_ball = state.balle
-    |> update_ball_position dt
-    |> check_wall_collision box in
-  {state with
-    balle = new_ball;
-    racket = new_racket;
-  }
+  (* Gestion de la collision avec la raquette *)
+  let handle_paddle_collision ball (paddle: etat_racket) =
+    let (px, py) = paddle.pos in
+    let (pw, _) = paddle.dim in
+    let (bx, by) = ball.pos in
+    let (vx, vy) = ball.vel in
+    
+    if by <= py +. 10. && by >= py && bx >= px && bx <= px +. pw then
+      let relative_x = (bx -. px) /. pw in  (* Position relative sur la raquette *)
+      let angle = (relative_x -. 0.5) *. 1.0 in  (* Angle de rebond basé sur la position *)
+      let speed = sqrt (vx *. vx +. vy *. vy) in
+      let new_vx = speed *. sin angle in
+      let new_vy = -.speed *. cos angle in
+      { ball with vel = (new_vx, new_vy) }
+    else
+      ball
 
-let game_flux initial_state mouse_flux =
-  Flux.unfold
-    (fun state ->
-      let mouse_input = Flux.head mouse_flux in
-      let new_state = update_game_state Init.dt mouse_input state in
-      Some (new_state, new_state))
-    initial_state
+  (* Mise à jour de l'état du jeu *)
+  let update_state dt (mouse_x, _) state =
+    if not state.running then 
+      state
+    else
+      (* Mise à jour de la raquette *)
+      let new_paddle_x = max 10. (min (790. -. 100.) mouse_x) in
+      let new_paddle = { state.paddle with pos = (new_paddle_x, 50.) } in
 
-(* newtonoid.ml *)
-let draw_state state =
-  (* Dessiner la raquette *)
-  let (rx, ry) = state.racket.pos in
-  let (rw, rh) = state.racket.dim in
-  Graphics.set_color Graphics.blue;
-  Graphics.fill_rect 
-    (int_of_float (rx -. rw/.2.)) 
-    (int_of_float (ry -. rh/.2.))
-    (int_of_float rw) 
-    (int_of_float rh);
-  
-  (* Dessiner la balle *)
-  let (bx, by) = state.balle.pos in
-  Graphics.set_color Graphics.red;
-  Graphics.fill_circle 
-    (int_of_float bx) 
-    (int_of_float by) 
-    (int_of_float state.balle.radius)
+      (* Mise à jour de la balle *)
+      let (x, y) = state.ball.pos in
+      let (vx, vy) = state.ball.vel in
+      let new_ball_pos = (x +. vx *. dt, y +. vy *. dt) in
+      let new_ball = { state.ball with pos = new_ball_pos } in
 
-let score state = 0  (* À implémenter avec la logique de score *)
+      (* Application des collisions *)
+      let ball_after_walls = handle_wall_collision new_ball in
+      let ball_after_paddle = handle_paddle_collision ball_after_walls new_paddle in
 
-let () =
-  Random.self_init ();
-  let game_state = game_flux initial_state mouse in
-  draw game_state
+      (* Gestion des collisions avec les briques *)
+      let colliding_bricks = BrickSet.get_colliding_bricks state.bricks ball_after_paddle in
+      let new_bricks = BrickSet.update_bricks state.bricks ball_after_paddle in
+      let score_increment = List.length colliding_bricks * 10 in
+
+      let ball_after_bricks = 
+        if List.length colliding_bricks > 0 then
+          { ball_after_paddle with vel = let (vx, vy) = ball_after_paddle.vel in (vx, -.vy) }
+        else
+          ball_after_paddle
+      in
+
+      (* Vérification de la perte de la balle *)
+      if snd ball_after_bricks.pos < 0. then
+        if state.lives <= 1 then
+          { state with running = false }
+        else
+          { state with
+            ball = { state.ball with pos = (400., 300.); vel = (2., -2.) };
+            lives = state.lives - 1;
+            score = state.score + score_increment }
+      else
+        { state with
+          ball = ball_after_bricks;
+          paddle = new_paddle;
+          bricks = new_bricks;
+          score = state.score + score_increment }
+
+  (* Création du flux d'états du jeu *)
+  let game_loop () =
+    let dt = 1. /. 60. in  (* 60 FPS *)
+    Flux.unfold
+      (fun state ->
+        Some (state, update_state dt (fst (Graphics.mouse_pos ()) |> float_of_int, false) state))
+      (create_game_state (400., false))
+end

@@ -1,3 +1,5 @@
+
+
 (* type.ml *)
 type position = float * float
 type velocity = float * float
@@ -15,9 +17,3 @@ type etat_balle = {
   radius: float;
 }
 
-type etat = {
-  balle: etat_balle;
-  racket: etat_racket;
-  score: int;
-  lives: int;
-}

@@ -1,3 +1,4 @@
-libnewtonoid__Input
+libnewtonoid__Brick
+libnewtonoid__Gamestate
 libnewtonoid__Iterator
 libnewtonoid__Type

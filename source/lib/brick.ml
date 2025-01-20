@@ -20,9 +20,7 @@ type brick
   val is_destroyed : brick -> bool
   val hit : brick -> brick
   val get_value : brick -> int
-
-
-  val get_position : brick -> float * float
+  val get_position : brick -> float * float 
   val get_dimensions : brick -> float * float
   val get_bounds : brick -> (float * float) * (float * float)
   val check_collision : brick -> etat_balle -> bool
@@ -78,10 +76,10 @@ module Brick : BRICK = struct
       let (x, y) = brick.pos in
       ((x, y), (x +. brick.width, y +. brick.height))
   
-  let check_collision brick ball =
+  let check_collision brick (ball:etat_balle) =
       let ((bx1, by1), (bx2, by2)) = get_bounds brick in
-      let (ball_x, ball_y) = ball.Type.pos in
-      let r = ball.Type.radius in
+      let (ball_x, ball_y) = ball.pos in
+      let r = ball.radius in
       
       (* Distance la plus proche entre le centre de la balle et la brique *)
       let closest_x = max bx1 (min ball_x bx2) in
@@ -100,9 +98,6 @@ module Brick : BRICK = struct
       | _ -> None
     
 end
-
-
-
 
 
 (* Module pour gérer un ensemble de briques *)
@@ -134,7 +129,7 @@ module BrickSet = struct
           in
           create_cols (x +. brick_width +. spacing) (col_idx + 1) (new_brick :: acc)
       in
-      create_cols spacing col_idx []
+      create_cols spacing 0 []
     in
     
     let rec create_rows y row_idx acc =

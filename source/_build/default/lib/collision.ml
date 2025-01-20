@@ -1,6 +1,7 @@
 (* collision.ml *)
 open Type
 open Brick
+open Gamestate
 
 module Collision = struct
   let check_ball_brick_collision (ball: etat_balle) (brick: Brick.brick) =
@@ -8,11 +9,11 @@ module Collision = struct
     let (ball_x, ball_y) = ball.pos in
     let r = ball.radius in
     
-    (* Trouver le point le plus proche de la balle sur la brique *)
+    (* Trouver le point le plus proche de la ball sur la brique *)
     let closest_x = max bx1 (min ball_x bx2) in
     let closest_y = max by1 (min ball_y by2) in
     
-    (* Calculer la distance entre la balle et ce point *)
+    (* Calculer la distance entre la ball et ce point *)
     let dx = ball_x -. closest_x in
     let dy = ball_y -. closest_y in
     let distance = sqrt(dx *. dx +. dy *. dy) in
@@ -61,13 +62,13 @@ module Collision = struct
     (reflected_x, reflected_y)
 
   let handle_collisions state bricks =
-    let ball = state.balle in
+    let ball = state.ball in
     
     (* Vérifier la collision avec la raquette *)
     let (paddle_collision, paddle_normal) = 
-      check_ball_paddle_collision ball state.racket in
+      check_ball_paddle_collision ball state.paddle in
     
-    (* Mettre à jour la vitesse de la balle si collision avec la raquette *)
+    (* Mettre à jour la vitesse de la ball si collision avec la raquette *)
     let ball = 
       if paddle_collision then
         let new_vel = handle_ball_collision ball.vel paddle_normal in
@@ -79,7 +80,7 @@ module Collision = struct
       List.partition (fun brick -> 
         fst (check_ball_brick_collision ball brick)) bricks in
     
-    (* Mettre à jour la vitesse de la balle pour la première brique touchée *)
+    (* Mettre à jour la vitesse de la ball pour la première brique touchée *)
     let ball = 
       match collided_bricks with
       | brick :: _ ->
@@ -96,7 +97,7 @@ module Collision = struct
     (* Retourner le nouvel état *)
     let new_state = {
       state with 
-      balle = ball;
+      ball = ball;
       score = state.score + points_gained
     } in
     

@@ -1,1 +1,1 @@
-lib/game.pp.ml: Flux Graphics Init Input Iterator Ppx_inline_test_lib Random Type
+lib/game.pp.ml: Brick BrickSet Flux Gamestate Graphics Iterator List Ppx_inline_test_lib Type

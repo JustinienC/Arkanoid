@@ -1,33 +1,10 @@
 open Type
 open Brick
+open Gamestate
 open Collision
 
   module GameState = struct
-      type game_state = {
-        ball: etat_balle;
-        paddle: etat_racket;
-        bricks: Brick.brick list;
-        score: int;
-        lives: int;
-        running: bool;
-      }
-    
-      let initial_state = {
-        ball = {
-          pos = (400., 300.);
-          vel = (2., -2.);
-          radius = 5.
-        };
-        paddle = {
-          pos = (350., 50.);
-          dim = (100., 10.);
-          vel = (0., 0.)
-        };
-        bricks = BrickSet.create_grid 5 8 60. 20. 10.;
-        score = 0;
-        lives = 3;
-        running = true;
-      }
+      type game_state = etat
 
       let update_state dt input_state current_state =
         if not current_state.running then current_state
@@ -57,6 +34,7 @@ open Collision
           let (state_after_collisions, remaining_bricks) = 
             Collision.handle_collisions 
               {current_state with ball = new_ball; paddle = new_paddle}
+              
               current_state.bricks in
           
           (* Vérifier si la balle est perdue *)

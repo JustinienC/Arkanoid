@@ -1,1 +1,1 @@
-lib/collision.pp.ml: Brick List Ppx_inline_test_lib Type
+lib/collision.pp.ml: Brick Gamestate List Ppx_inline_test_lib Type
