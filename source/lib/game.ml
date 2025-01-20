@@ -7,14 +7,14 @@ open Gamestate
 
 let game_hello () = 
   print_endline "Bienvenue dans Newtonoid!"
-  
+
 module Game = struct
 
   (* Configuration initiale *)
   let initial_state = {
     ball = {
       pos = (400., 300.);
-      vel = (2., -2.);
+      vel = (400.0, -400.);
       radius = 5.
     };
     paddle = {
@@ -44,7 +44,7 @@ module Game = struct
     { ball with vel = (new_vx, new_vy) }
 
   (* Gestion de la collision avec la raquette *)
-  let handle_paddle_collision ball (paddle: etat_racket) =
+  (* let handle_paddle_collision ball (paddle: etat_racket) =
     let (px, py) = paddle.pos in
     let (pw, _) = paddle.dim in
     let (bx, by) = ball.pos in
@@ -58,7 +58,23 @@ module Game = struct
       let new_vy = -.speed *. cos angle in
       { ball with vel = (new_vx, new_vy) }
     else
-      ball
+      ball *)
+      let handle_paddle_collision ball (paddle: etat_racket) =
+        let (px, py) = paddle.pos in
+        let (pw, ph) = paddle.dim in
+        let (bx, by) = ball.pos in
+        let (vx, vy) = ball.vel in
+        
+        (* Modification ici : on vérifie la collision sur le dessus de la raquette *)
+        if by >= py && by <= py +. ph && bx >= px && bx <= px +. pw then
+          let relative_x = (bx -. px) /. pw in  (* Position relative sur la raquette *)
+          let angle = (relative_x -. 0.5) *. 1.0 in  (* Angle de rebond basé sur la position *)
+          let speed = sqrt (vx *. vx +. vy *. vy) in
+          let new_vx = speed *. sin angle in
+          let new_vy = abs_float (speed *. cos angle) in  (* On s'assure que la balle part vers le haut *)
+          { ball with vel = (new_vx, new_vy) }
+        else
+          ball
 
   (* Mise à jour de l'état du jeu *)
   let update_state dt (mouse_x, _) state =
