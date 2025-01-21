@@ -3,6 +3,7 @@ open Iterator
 open Type
 open Brick
 open Gamestate
+open Menu
 
 
 let game_hello () = 
@@ -34,7 +35,6 @@ module Game = struct
     lives = 3;
     running = true
   }
-
 
   (* Création d'un nouvel état à partir de l'entrée souris *)
   let create_game_state (mouse_x, _) =
@@ -109,14 +109,20 @@ module Game = struct
       (* Vérification de la perte de la balle ou qu'il n'y a plus de brique*)
       if snd ball_after_bricks.pos < snd initial_state.paddle.pos then
         if state.lives <= 1 then
-          { state with running = false }
+          begin
+            (*show_defeat ();*)
+            { state with running = false }
+          end
         else
           { state with
             ball = { state.ball with pos = initial_state.ball.pos; vel = initial_state.ball.vel };
             lives = state.lives - 1;
             score = state.score + score_increment }
       else if List.length state.bricks == 0 then
-        { state with running = false }
+        begin
+          (*show_victory ();*)
+          { state with running = false }
+        end
       else
         { state with
           ball = ball_after_bricks;
