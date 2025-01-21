@@ -31,7 +31,7 @@ module Game = struct
     };
     bricks = BrickSet.create_grid BrickInit.rows BrickInit.cols BrickInit.brick_width BrickInit.brick_height BrickInit.spacing;
     score = 0;
-    lives = 50;
+    lives = 3;
     running = true
   }
 
@@ -106,7 +106,7 @@ module Game = struct
           ball_after_paddle
       in
 
-      (* Vérification de la perte de la balle *)
+      (* Vérification de la perte de la balle ou qu'il n'y a plus de brique*)
       if snd ball_after_bricks.pos < snd initial_state.paddle.pos then
         if state.lives <= 1 then
           { state with running = false }
@@ -115,6 +115,8 @@ module Game = struct
             ball = { state.ball with pos = initial_state.ball.pos; vel = initial_state.ball.vel };
             lives = state.lives - 1;
             score = state.score + score_increment }
+      else if List.length state.bricks == 0 then
+        { state with running = false }
       else
         { state with
           ball = ball_after_bricks;
