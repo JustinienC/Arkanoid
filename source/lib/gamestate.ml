@@ -9,3 +9,14 @@ type etat = {
   lives: int;
   running: bool;
 }
+
+type etat_win = {
+  quitButton : bool;
+  replayButton : bool;
+  scoreV : int}
+
+type etat_lose = {
+  bQuit : bool;
+  bReplay : bool;
+  scoreL : int
+}

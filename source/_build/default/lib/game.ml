@@ -110,7 +110,7 @@ module Game = struct
       if snd ball_after_bricks.pos < snd initial_state.paddle.pos then
         if state.lives <= 1 then
           begin
-            show_defeat ();
+            (*show_defeat ();*)
             { state with running = false }
           end
         else
@@ -120,7 +120,7 @@ module Game = struct
             score = state.score + score_increment }
       else if List.length state.bricks == 0 then
         begin
-          show_victory ();
+          (*show_victory ();*)
           { state with running = false }
         end
       else

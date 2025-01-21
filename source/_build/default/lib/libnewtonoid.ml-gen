@@ -21,6 +21,9 @@ module Iterator = Libnewtonoid__Iterator
 (** @canonical Libnewtonoid.Menu *)
 module Menu = Libnewtonoid__Menu
 
+(** @canonical Libnewtonoid.Power *)
+module Power = Libnewtonoid__Power
+
 (** @canonical Libnewtonoid.Quadtree *)
 module Quadtree = Libnewtonoid__Quadtree
 
