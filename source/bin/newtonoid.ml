@@ -1,7 +1,6 @@
 (* bin/newtonoid.ml mis à jour *)
 open Libnewtonoid
 open Iterator
-open State
 open Brick
 open Type
 open Game
@@ -10,7 +9,8 @@ open Graphics
 
 
 module Init = struct
-  let dt = 1000. /. 60. (* 60 Hz *)
+  (* let dt = 1000. /. 60. 60 Hz *)
+ let  dt= 1.0 /. 60.0  (*60 FPS*)
 end
 
 module Box = struct
@@ -60,7 +60,7 @@ let draw_paddle (paddle:etat_racket) =
     (int_of_float h)
 
 let draw_state (state : etat)=
-  (* Fond de couleur *)
+  (* Fond de *)
   Graphics.set_color (Graphics.rgb 40 40 40);  
   Graphics.fill_rect 0 0 800 600;
   
@@ -83,15 +83,20 @@ let draw flux_etat =
     | None -> last_score
     | Some (etat, flux_etat') ->
       Graphics.clear_graph ();
+       (* DESSIN ETAT *)
       draw_state etat;
+       (* FIN DESSIN ETAT *)
       Graphics.synchronize ();
-      Unix.sleepf (1.0 /. 60.0);  (* 60 FPS *)
+      Unix.sleepf Init.dt;
       loop flux_etat' (score etat)
+      (* loop flux_etat' (last_score + score etat) *)
+    | _ -> assert false
   in
   Graphics.open_graph graphic_format;
   Graphics.auto_synchronize false;
   let final_score = loop flux_etat 0 in
   Format.printf "Score final : %d@." final_score;
+  (* Format.printf "Score final : %d@\n" score; *)
   Graphics.close_graph ()
 
 let () =

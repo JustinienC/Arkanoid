@@ -4,7 +4,18 @@ open Brick
 open Gamestate
 
 module Collision = struct
+
+   (* Vérifie la collision entre la balle et une brique *)
+
+   (* 
+   Paramètres :
+      ball : l'état de la balle (etat_balle).
+      racket : l'état de la raquette (etat_racket).
+   Retourne :
+     Un tuple (bool, (float * float)) indiquant s'il y a une collision et la normale de collision (vecteur de réflexion).
+ *)
   let check_ball_brick_collision (ball: etat_balle) (brick: Brick.brick) =
+
     let ((bx1, by1), (bx2, by2)) = Brick.get_bounds brick in
     let (ball_x, ball_y) = ball.pos in
     let r = ball.radius in
@@ -26,32 +37,51 @@ module Collision = struct
     else
       (false, (0., 0.))
 
-  let check_ball_paddle_collision (ball: etat_balle) (racket: etat_racket) =
-    let (rx, ry) = racket.pos in
-    let (rw, rh) = racket.dim in
-    let (ball_x, ball_y) = ball.pos in
-    let r = ball.radius in
-    
-    (* Rectangle englobant de la raquette *)
-    let rx1 = rx -. rw /. 2. in
-    let rx2 = rx +. rw /. 2. in
-    let ry1 = ry -. rh /. 2. in
-    let ry2 = ry +. rh /. 2. in
-    
-    (* Même logique que pour les briques *)
-    let closest_x = max rx1 (min ball_x rx2) in
-    let closest_y = max ry1 (min ball_y ry2) in
-    
-    let dx = ball_x -. closest_x in
-    let dy = ball_y -. closest_y in
-    let distance = sqrt(dx *. dx +. dy *. dy) in
-    
-    if distance <= r then
-      let normal_x = dx /. distance in
-      let normal_y = dy /. distance in
-      (true, (normal_x, normal_y))
-    else
-      (false, (0., 0.))
+      
+
+    (* Vérifie la collision entre la balle et la raquette *)
+
+    (* Paramètres :
+          ball : l'état de la balle (etat_balle).
+          racket : l'état de la raquette (etat_racket).
+       Retourne :
+          Un tuple (bool, (float * float)) indiquant s'il y a une collision et la normale de collision (vecteur de réflexion). *)
+
+    let check_ball_paddle_collision (ball: etat_balle) (racket: etat_racket) =
+        let (rx, ry) = racket.pos in
+        let (rw, rh) = racket.dim in
+        let (ball_x, ball_y) = ball.pos in
+        let r = ball.radius in
+        
+        (* Rectangle englobant de la raquette *)
+        let rx1 = rx in
+        let rx2 = rx +. rw in
+        let ry1 = ry in
+        let ry2 = ry +. rh in
+        
+        (* Même logique que pour les briques *)
+        let closest_x = max rx1 (min ball_x rx2) in
+        let closest_y = max ry1 (min ball_y ry2) in
+        
+        let dx = ball_x -. closest_x in
+        let dy = ball_y -. closest_y in
+        let distance = sqrt(dx *. dx +. dy *. dy) in
+        
+        if distance <= r && ball_y > ry then  (* Ajout de la condition ball_y > ry *)
+          let normal_x = dx /. distance in
+          let normal_y = abs_float (dy /. distance) in  (* Force une normale vers le haut *)
+          (true, (normal_x, normal_y))
+        else
+          (false, (0., 0.))
+
+ (* Gère la réflexion de la balle après une collision *)
+
+ (* 
+ Paramètres :
+    velocity : la vitesse actuelle de la balle.
+    normal : la normale de collision (vecteur de réflexion).
+ Retourne :
+    La nouvelle vitesse de la balle après réflexion. *)
 
   let handle_ball_collision velocity normal =
     let (vx, vy) = velocity in
@@ -61,6 +91,16 @@ module Collision = struct
     let reflected_y = vy -. (2. *. dot_product *. ny) in
     (reflected_x, reflected_y)
 
+
+  (* Gère les collisions dans le jeu et met à jour l'état du jeu *)
+
+  (* 
+  Paramètres :
+      state : l'état actuel du jeu (etat).
+      bricks : la liste des briques.
+  Retourne :
+    Un tuple contenant le nouvel état du jeu et la liste des briques restantes. 
+  *)
   let handle_collisions state bricks =
     let ball = state.ball in
     

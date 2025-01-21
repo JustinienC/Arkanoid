@@ -8,8 +8,15 @@ open Gamestate
 let game_hello () = 
   print_endline "Bienvenue dans Newtonoid!"
 
-module Game = struct
+module BrickInit = struct
+  let rows =5
+  let cols=8
+  let brick_width=80.
+  let brick_height=20.
+  let spacing=10.
+end
 
+module Game = struct
   (* Configuration initiale *)
   let initial_state = {
     ball = {
@@ -22,11 +29,12 @@ module Game = struct
       dim = (100., 10.);
       vel = (0., 0.)
     };
-    bricks = BrickSet.create_grid 5 8 80. 20. 10.;
+    bricks = BrickSet.create_grid BrickInit.rows BrickInit.cols BrickInit.brick_width BrickInit.brick_height BrickInit.spacing;
     score = 0;
-    lives = 3;
+    lives = 50;
     running = true
   }
+
 
   (* Création d'un nouvel état à partir de l'entrée souris *)
   let create_game_state (mouse_x, _) =
@@ -43,38 +51,29 @@ module Game = struct
     let new_vy = if y <= 10. || y >= 590. then -.vy else vy in
     { ball with vel = (new_vx, new_vy) }
 
-  (* Gestion de la collision avec la raquette *)
-  (* let handle_paddle_collision ball (paddle: etat_racket) =
-    let (px, py) = paddle.pos in
-    let (pw, _) = paddle.dim in
-    let (bx, by) = ball.pos in
-    let (vx, vy) = ball.vel in
-    
-    if by <= py +. 10. && by >= py && bx >= px && bx <= px +. pw then
-      let relative_x = (bx -. px) /. pw in  (* Position relative sur la raquette *)
-      let angle = (relative_x -. 0.5) *. 1.0 in  (* Angle de rebond basé sur la position *)
-      let speed = sqrt (vx *. vx +. vy *. vy) in
-      let new_vx = speed *. sin angle in
-      let new_vy = -.speed *. cos angle in
-      { ball with vel = (new_vx, new_vy) }
-    else
-      ball *)
-      let handle_paddle_collision ball (paddle: etat_racket) =
+  let handle_paddle_collision ball (paddle: etat_racket) =
         let (px, py) = paddle.pos in
         let (pw, ph) = paddle.dim in
         let (bx, by) = ball.pos in
         let (vx, vy) = ball.vel in
         
-        (* Modification ici : on vérifie la collision sur le dessus de la raquette *)
-        if by >= py && by <= py +. ph && bx >= px && bx <= px +. pw then
-          let relative_x = (bx -. px) /. pw in  (* Position relative sur la raquette *)
-          let angle = (relative_x -. 0.5) *. 1.0 in  (* Angle de rebond basé sur la position *)
-          let speed = sqrt (vx *. vx +. vy *. vy) in
-          let new_vx = speed *. sin angle in
-          let new_vy = abs_float (speed *. cos angle) in  (* On s'assure que la balle part vers le haut *)
-          { ball with vel = (new_vx, new_vy) }
+        if by <= py +. ph then
+
+          (* Modification ici : on vérifie la collision sur le dessus de la raquette *)
+          if by >= py && by <= py +. ph && bx >= px && bx <= px +. pw then
+            let relative_x = (bx -. px) /. pw in  (* Position relative sur la raquette *)
+            let angle = (relative_x -. 0.5) *. 1.0 in  (* Angle de rebond basé sur la position *)
+            let speed = sqrt (vx *. vx +. vy *. vy) in
+            let new_vx = speed *. sin angle in
+            let new_vy = abs_float (speed *. cos angle) in  (* On s'assure que la balle part vers le haut *)
+            { ball with vel = (new_vx, new_vy) }
+          else
+            ball
         else
-          ball
+            ball
+
+  let check_ball_lost ball =
+            snd ball.pos < snd initial_state.paddle.pos  (* Ball en dessous de la raquette *)
 
   (* Mise à jour de l'état du jeu *)
   let update_state dt (mouse_x, _) state =
@@ -108,12 +107,12 @@ module Game = struct
       in
 
       (* Vérification de la perte de la balle *)
-      if snd ball_after_bricks.pos < 0. then
+      if snd ball_after_bricks.pos < snd initial_state.paddle.pos then
         if state.lives <= 1 then
           { state with running = false }
         else
           { state with
-            ball = { state.ball with pos = (400., 300.); vel = (2., -2.) };
+            ball = { state.ball with pos = initial_state.ball.pos; vel = initial_state.ball.vel };
             lives = state.lives - 1;
             score = state.score + score_increment }
       else
@@ -123,6 +122,8 @@ module Game = struct
           bricks = new_bricks;
           score = state.score + score_increment }
 
+  
+
   (* Création du flux d'états du jeu *)
   let game_loop () =
     let dt = 1. /. 60. in  (* 60 FPS *)
@@ -130,4 +131,6 @@ module Game = struct
       (fun state ->
         Some (state, update_state dt (fst (Graphics.mouse_pos ()) |> float_of_int, false) state))
       (create_game_state (400., false))
+
+      
 end
