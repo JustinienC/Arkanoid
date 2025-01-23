@@ -1,1 +1,1 @@
-lib/power.pp.ml: Ppx_inline_test_lib
+lib/power.pp.ml: Brick List Ppx_inline_test_lib Type

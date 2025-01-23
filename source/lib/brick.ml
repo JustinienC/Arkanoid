@@ -3,7 +3,7 @@ open Type
 
 module type BRICK = sig
 
-type brick
+  type brick
   type brick_type = 
   | Normal                      (* Une brique standard qui peut être détruite *)
   | Indestructible              (* Une brique qui ne peut pas être détruite *)
@@ -26,6 +26,7 @@ type brick
   val hit : brick -> brick  (*Réduit les points de vie de la brique lorsqu'elle est touchée par la balle.*)
   val get_value : brick -> int  (*Retourne la valeur de la brique (points gagnés en la détruisant).*)
   val get_position : brick -> float * float  (*Retourne la position de la brique.*)
+  val get_heal : brick -> int
   val get_dimensions : brick -> float * float (*Retourne les dimensions de la brique.*)
   val get_bounds : brick -> (float * float) * (float * float) (*Retourne les limites de la brique.(coin supérieur gauche et coin inférieur droit.)*)
   val check_collision : brick -> etat_balle -> bool (*Vérifie si une collision se produit entre la brique et la balle.*)
@@ -69,6 +70,7 @@ module Brick : BRICK = struct
     | Indestructible -> brick
     | _ -> { brick with health = brick.health - 1 }
 
+  let get_heal brick = brick.health
   let get_value brick = brick.value
 
   (* let get_value brick = 
@@ -197,10 +199,3 @@ module BrickSet = struct
   let get_colliding_bricks bricks ball =
     List.filter (fun brick -> Brick.check_collision brick ball) bricks
 end
-
-
-
-
-
-
-

@@ -2,4 +2,5 @@ libnewtonoid__Brick
 libnewtonoid__Gamestate
 libnewtonoid__Iterator
 libnewtonoid__Menu
+libnewtonoid__Power
 libnewtonoid__Type

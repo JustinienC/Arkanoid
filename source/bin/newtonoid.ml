@@ -6,6 +6,7 @@ open Type
 open Game
 open Gamestate
 open Graphics
+open Power
 
 
 module Init = struct
@@ -41,6 +42,19 @@ let draw_brick brick =
   Graphics.fill_rect (int_of_float x) (int_of_float y) 
                     (int_of_float w) (int_of_float h)
 
+  let draw_power power =
+  let (x, y) = Power.get_position power in
+  let (w, h) = Power.get_dimensions power in
+  Graphics.set_color (
+    match Power.getType power with
+    | Brick.EnlargePaddle -> Graphics.red
+    | Brick.SpeedUp -> Graphics.yellow
+    | Brick.MultiplyBall -> Graphics.green
+  );
+  Graphics.fill_rect (int_of_float x) (int_of_float y) 
+                    (int_of_float w) (int_of_float h)
+
+
 let draw_ball ball =
   let (x, y) = ball.pos in
   Graphics.set_color Graphics.white;
@@ -68,7 +82,8 @@ let draw_state (state : etat)=
   List.iter draw_brick state.bricks;
   draw_paddle state.paddle;
   draw_ball state.ball;
-  
+  List.iter draw_power state.power;
+
   (* Interface utilisateur *)
   Graphics.set_color Graphics.white;
   Graphics.moveto 10 570;

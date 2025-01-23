@@ -4,7 +4,7 @@ open Type
 open Brick
 open Gamestate
 open Menu
-
+open Power
 
 let game_hello () = 
   print_endline "Bienvenue dans Newtonoid!"
@@ -19,7 +19,9 @@ end
 
 module Game = struct
   (* Configuration initiale *)
-  let initial_state = {
+  let initial_state = 
+    let b = BrickSet.create_grid BrickInit.rows BrickInit.cols BrickInit.brick_width BrickInit.brick_height BrickInit.spacing in
+  {
     ball = {
       pos = (400., 300.);
       vel = (400.0, -400.);
@@ -30,7 +32,8 @@ module Game = struct
       dim = (100., 10.);
       vel = (0., 0.)
     };
-    bricks = BrickSet.create_grid BrickInit.rows BrickInit.cols BrickInit.brick_width BrickInit.brick_height BrickInit.spacing;
+    bricks = b;
+    power = PowerSet.create_from_bricks b;
     score = 0;
     lives = 3;
     running = true
@@ -97,9 +100,10 @@ module Game = struct
       (* Gestion des collisions avec les briques *)
       let colliding_bricks = BrickSet.get_colliding_bricks state.bricks ball_after_paddle in
       let new_bricks = BrickSet.update_bricks state.bricks ball_after_paddle in
+      let new_power = PowerSet.update_powers state.paddle dt state.power new_bricks in
       let score_increment = List.length colliding_bricks * 10 in
 
-      let ball_after_bricks = 
+      let ball_after_bricks =
         if List.length colliding_bricks > 0 then
           { ball_after_paddle with vel = let (vx, vy) = ball_after_paddle.vel in (vx, -.vy) }
         else
@@ -128,6 +132,7 @@ module Game = struct
           ball = ball_after_bricks;
           paddle = new_paddle;
           bricks = new_bricks;
+          power = new_power;
           score = state.score + score_increment }
 
   
