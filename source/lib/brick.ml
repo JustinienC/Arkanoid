@@ -3,7 +3,7 @@ open Type
 
 module type BRICK = sig
 
-type brick
+  type brick
   type brick_type = 
   | Normal                      (* Une brique standard qui peut être détruite *)
   | Indestructible              (* Une brique qui ne peut pas être détruite *)
@@ -26,6 +26,7 @@ type brick
   val hit : brick -> brick  (*Réduit les points de vie de la brique lorsqu'elle est touchée par la balle.*)
   val get_value : brick -> int  (*Retourne la valeur de la brique (points gagnés en la détruisant).*)
   val get_position : brick -> float * float  (*Retourne la position de la brique.*)
+  val get_heal : brick -> int
   val get_dimensions : brick -> float * float (*Retourne les dimensions de la brique.*)
   val get_bounds : brick -> (float * float) * (float * float) (*Retourne les limites de la brique.(coin supérieur gauche et coin inférieur droit.)*)
   val check_collision : brick -> etat_balle -> bool (*Vérifie si une collision se produit entre la brique et la balle.*)
@@ -69,6 +70,7 @@ module Brick : BRICK = struct
     | Indestructible -> brick
     | _ -> { brick with health = brick.health - 1 }
 
+  let get_heal brick = brick.health
   let get_value brick = brick.value
 
   (* let get_value brick = 
@@ -127,18 +129,19 @@ module BrickSet = struct
   create_cols: Fonction récursive pour ajouter des colonnes de briques à une rangée.
  *)
 
-  let create_grid rows cols brick_width brick_height spacing =
+  let create_grid rows cols brick_width brick_height spacing power_ratio =
     let create_row y row_idx =
       let rec create_cols x col_idx acc =
         if col_idx >= cols then acc
         else
           let brick_type = 
-            if Random.float 1.0 < 0.1 then 
+            if Random.float 1.0 < power_ratio then 
               Brick.PowerUp (
                 match Random.int 3 with
                 | 0 -> Brick.EnlargePaddle
                 | 1 -> Brick.SpeedUp
-                | _ -> Brick.MultiplyBall
+                | 2 -> Brick.MultiplyBall
+                | _ -> Brick.EnlargePaddle
               )
             else Brick.Normal
           in
@@ -164,43 +167,55 @@ module BrickSet = struct
     in
     create_rows spacing 0 []
 
-
   (* Fonction pour mettre à jour les briques en fonction des collisions avec la balle *)
   (* 
   Paramètres:
-
       bricks: liste de briques.
       ball: état de la balle.
-
     Retourne: une nouvelle liste de briques mise à jour. 
   *)
-
-  let update_bricks bricks ball =
-    let update_brick brick =
-      if Brick.check_collision brick ball then
-        match Brick.hit brick with
-        | new_brick when Brick.is_destroyed new_brick -> None
-        | new_brick -> Some new_brick
-      else Some brick
+  let update_bricks bricks balls =
+    let rec update_ball_bricks ball current_bricks acc =
+      match current_bricks with
+      | [] -> List.rev acc
+      | brick :: rest ->
+          let updated_brick = 
+            if Brick.check_collision brick ball then
+              match Brick.hit brick with
+              | new_brick when Brick.is_destroyed new_brick -> None
+              | new_brick -> Some new_brick
+            else Some brick
+          in
+          let new_acc = 
+            match updated_brick with
+            | Some b -> b :: acc
+            | None -> acc
+          in
+          update_ball_bricks ball rest new_acc
     in
-    List.filter_map update_brick bricks
+    let rec process_balls balls current_bricks =
+      match balls with
+      | [] -> current_bricks
+      | ball :: rest ->
+          let updated_bricks = update_ball_bricks ball current_bricks [] in
+          process_balls rest updated_bricks
+    in
+    process_balls balls bricks
 
-  (* Fonction pour obtenir les briques en collision avec la balle *)
-
-  (* 
-  Paramètres:
-      bricks: liste de briques.
-      ball: état de la balle.
-  Retourne: une liste de briques en collision avec la balle. 
-  *)
-
-  let get_colliding_bricks bricks ball =
-    List.filter (fun brick -> Brick.check_collision brick ball) bricks
+  (* Optimized get_colliding_bricks function *)
+  let get_colliding_bricks bricks balls =
+    let rec check_ball_collisions ball current_collisions =
+      let ball_collisions = 
+        List.filter (fun brick -> Brick.check_collision brick ball) bricks 
+      in
+      current_collisions @ ball_collisions
+    in
+    let rec process_balls balls collisions =
+      match balls with
+      | [] -> collisions
+      | ball :: rest ->
+          let ball_collisions = check_ball_collisions ball [] in
+          process_balls rest (collisions @ ball_collisions)
+    in
+    process_balls balls []
 end
-
-
-
-
-
-
-

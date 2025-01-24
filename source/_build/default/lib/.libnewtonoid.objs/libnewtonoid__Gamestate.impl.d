@@ -1,1 +1,1 @@
-lib/gamestate.pp.ml: Brick Ppx_inline_test_lib Type
+lib/gamestate.pp.ml: Brick Power Ppx_inline_test_lib Type
