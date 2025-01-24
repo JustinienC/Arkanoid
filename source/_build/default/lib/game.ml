@@ -35,6 +35,7 @@ module Game = struct
     bricks = b;
     power = PowerSet.create_from_bricks b;
     actif_power = [];
+    power_time = 2.0;
     score = 0;
     lives = 300;
     running = true
@@ -112,6 +113,8 @@ module Game = struct
       
       let activatePower = List.map (fun power -> Power.get_type power) colliding_powers in
 
+      let power_activated_tabs = List.map (fun typeP -> (typeP, 0.0)) activatePower in
+
       let ball_after_bricks =
         if List.length colliding_bricks > 0 then
           { ball_after_paddle with vel = let (vx, vy) = ball_after_paddle.vel in (vx, -.vy) }
@@ -135,8 +138,34 @@ module Game = struct
           new_paddle
       in
 
-      (*let ball_after_power_dissipate = 
-        if*) 
+      let ball_after_power_dissipate = 
+        let ballSpeedPower = List.filter (fun elem -> fst elem = Brick.SpeedUp) power_activated_tabs in
+        if List.length ballSpeedPower > 0 then
+          let disspated_power = List.filter (fun elem -> snd elem > state.power_time) ballSpeedPower in
+          if List.length disspated_power > 0 then
+            let (vx, vy) = ball_after_activating_powers.vel in
+            {ball_after_activating_powers with vel = (vx /. (1.5 *. abs_float (float (List.length ballSpeedPower - List.length disspated_power))), vy /. (1.5 *. abs_float (float (List.length ballSpeedPower - List.length disspated_power))))}
+          else
+            ball_after_activating_powers
+        else
+          ball_after_activating_powers
+      in
+
+      let paddle_after_power_dissipate = 
+        let paddleLargePower = List.filter (fun elem -> fst elem = Brick.EnlargePaddle) power_activated_tabs in
+        if List.length paddleLargePower > 0 then
+          let disspated_power = List.filter (fun elem -> snd elem > state.power_time) paddleLargePower in
+          if List.length disspated_power > 0 then
+            let (dimx, dimy) = paddle_after_activating_power.dim in
+            {paddle_after_activating_power with dim = (dimx /. (1.5 *. float (List.length paddleLargePower - List.length disspated_power)), dimy)}
+          else
+            paddle_after_activating_power
+        else
+          paddle_after_activating_power
+      in
+
+      let new_actif_power = List.filter_map (fun (elem1, elem2) -> if elem2 > state.power_time then None else Some (elem1, elem2 +. dt)) state.actif_power
+      in
 
       (* Vérification de la perte de la balle ou qu'il n'y a plus de brique*)
       if snd ball_after_activating_powers.pos < snd initial_state.paddle.pos then
@@ -149,8 +178,8 @@ module Game = struct
         let direction_x = fst paddle_after_activating_power.pos -. fst initial_state.ball.pos +. fst paddle_after_activating_power.dim /. 2.0 in
         let direction_y = snd paddle_after_activating_power.pos -. snd initial_state.ball.pos in
         let norm = norme (direction_x, direction_y) in
-        let velocity_x = sqrt (400. *. 400. +. 400. *. 400.) *. (direction_x /. norm) in
-        let velocity_y = sqrt (400. *. 400. +. 400. *. 400.) *. (direction_y /. norm) in
+        let velocity_x = sqrt (2.0 *. 400. *. 400.) *. (direction_x /. norm) in
+        let velocity_y = sqrt (2.0 *. 400. *. 400.) *. (direction_y /. norm) in
         { state with
           ball = { state.ball with
           pos = initial_state.ball.pos; 
@@ -166,10 +195,11 @@ module Game = struct
         end
       else
         { state with
-          ball = ball_after_activating_powers;
-          paddle = paddle_after_activating_power;
+          ball = ball_after_power_dissipate;
+          paddle = paddle_after_power_dissipate;
           bricks = new_bricks;
           power = new_power;
+          actif_power = new_actif_power;
           score = state.score + score_increment }
 
   

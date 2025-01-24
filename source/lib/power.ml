@@ -178,7 +178,7 @@ module PowerSet = struct
     let update_power power = 
       if Power.check_paddle_collision power paddle then None
       else if Power.is_no_brick_at_power_position power bricks && Power.get_move power = false then
-        Some (Power.startMove power (-50.0))
+        Some (Power.startMove power (-150.0))
       else
       let (x, y) = Power.get_position power in
       let new_y = y +. (Power.get_speed power) *. dt in
