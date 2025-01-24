@@ -1,3 +1,10 @@
-Pour le menu de victoire et défaite pas sûr que ce soit faisable car Graphics ne permet pas d'ouvrir plus d'une fenêtre et comme ce n'est pas le plus important ce ne sera pas la priorité
+En gros les pouvoirs sont rangés dans une liste de pouvoir tout comme les briques et power.ml est plus ou moins un copier collé de brick.ml que j'ai quand même pas mal réadapté.
+Ce qui marche : - Les pouvoirs sont des blocs créés au même endroit que les briques
+- Les pouvoirs ne bougent pas tant que la brique n'est pas cassée
+- Quand un pouvoir entre en collision avec la raquette il disparaît(même si ça ne marche pas tout le temps très bien)
 
-Pour les powerup j'ai commencé en m'inspirant de brick et je vais voir si je peux finir mercredi(je pense pas) ou jeudi(c'est possible)
+  
+Il y a deux problèmes qui restent à résoudre : 
+- Les pouvoirs ne marchent pas car je n'ai pas encore commencé à les implémenter(mais je ne pense pas que ce soit très dure à faire)
+- Quand la brique ou se trouve le pouvoir est cassée, le pouvoir ne descend pas c'est la fonction update_power dans power.ml qui gère ça mais la condition du else if
+  permet de modifier la vitesse verticale de la brique n'est jamais vérifiée
