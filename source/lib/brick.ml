@@ -129,13 +129,13 @@ module BrickSet = struct
   create_cols: Fonction récursive pour ajouter des colonnes de briques à une rangée.
  *)
 
-  let create_grid rows cols brick_width brick_height spacing =
+  let create_grid rows cols brick_width brick_height spacing power_ratio =
     let create_row y row_idx =
       let rec create_cols x col_idx acc =
         if col_idx >= cols then acc
         else
           let brick_type = 
-            if Random.float 1.0 < 0.2 then 
+            if Random.float 1.0 < power_ratio then 
               Brick.PowerUp (
                 match Random.int 3 with
                 | 0 -> Brick.EnlargePaddle

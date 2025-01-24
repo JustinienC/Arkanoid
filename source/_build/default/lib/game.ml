@@ -14,12 +14,13 @@ module BrickInit = struct
   let brick_width=40.
   let brick_height=10.
   let spacing=15.
+  let power_ratio = 0.1
 end
 
 module Game = struct
   (* Configuration initiale *)
   let initial_state = 
-    let b = BrickSet.create_grid BrickInit.rows BrickInit.cols BrickInit.brick_width BrickInit.brick_height BrickInit.spacing in
+    let b = BrickSet.create_grid BrickInit.rows BrickInit.cols BrickInit.brick_width BrickInit.brick_height BrickInit.spacing BrickInit.power_ratio in
   {
     ball = {
       pos = (400., 300.);
@@ -38,6 +39,8 @@ module Game = struct
     lives = 300;
     running = true
   }
+
+  let norme (x, y) = sqrt(x *. x +. y *. y)
 
   (* Création d'un nouvel état à partir de l'entrée souris *)
   let create_game_state (mouse_x, _) =
@@ -106,6 +109,7 @@ module Game = struct
       let colliding_powers = PowerSet.get_colliding_powers state.power state.paddle in
       let new_power = PowerSet.update_powers state.paddle dt state.power new_bricks in
 
+      
       let activatePower = List.map (fun power -> Power.get_type power) colliding_powers in
 
       let ball_after_bricks =
@@ -115,7 +119,7 @@ module Game = struct
           ball_after_paddle
       in
 
-      let ball_after_powers = 
+      let ball_after_activating_powers = 
       if List.mem Brick.SpeedUp activatePower then
         let (vx, vy) = ball_after_bricks.vel in
         {ball_after_bricks with vel = (1.5 *. vx, 1.5 *. vy)}
@@ -123,7 +127,7 @@ module Game = struct
         ball_after_bricks
       in
 
-      let paddle_after_power = 
+      let paddle_after_activating_power = 
         if List.mem Brick.EnlargePaddle activatePower then
           let (dimx, dimy) = new_paddle.dim in
           {new_paddle with dim = (dimx *. 1.5, dimy)}
@@ -131,18 +135,30 @@ module Game = struct
           new_paddle
       in
 
+      (*let ball_after_power_dissipate = 
+        if*) 
+
       (* Vérification de la perte de la balle ou qu'il n'y a plus de brique*)
-      if snd ball_after_powers.pos < snd initial_state.paddle.pos then
+      if snd ball_after_activating_powers.pos < snd initial_state.paddle.pos then
         if state.lives <= 1 then
           begin
             (*show_defeat ();*)
             { state with running = false }
           end
-        else
-          { state with
-            ball = { state.ball with pos = initial_state.ball.pos; vel = initial_state.ball.vel };
-            lives = state.lives - 1;
-            score = state.score + score_increment }
+      else
+        let direction_x = fst paddle_after_activating_power.pos -. fst initial_state.ball.pos +. fst paddle_after_activating_power.dim /. 2.0 in
+        let direction_y = snd paddle_after_activating_power.pos -. snd initial_state.ball.pos in
+        let norm = norme (direction_x, direction_y) in
+        let velocity_x = sqrt (400. *. 400. +. 400. *. 400.) *. (direction_x /. norm) in
+        let velocity_y = sqrt (400. *. 400. +. 400. *. 400.) *. (direction_y /. norm) in
+        { state with
+          ball = { state.ball with
+          pos = initial_state.ball.pos; 
+          vel = (velocity_x, velocity_y) 
+        };
+        lives = state.lives - 1;
+        score = state.score + score_increment
+        }
       else if List.length state.bricks == 0 then
         begin
           (*show_victory ();*)
@@ -150,8 +166,8 @@ module Game = struct
         end
       else
         { state with
-          ball = ball_after_powers;
-          paddle = paddle_after_power;
+          ball = ball_after_activating_powers;
+          paddle = paddle_after_activating_power;
           bricks = new_bricks;
           power = new_power;
           score = state.score + score_increment }
@@ -163,7 +179,7 @@ module Game = struct
     let dt = 1. /. 60. in  (* 60 FPS *)
     Flux.unfold
       (fun state ->
-        Some (state, update_state dt ((fst (Graphics.mouse_pos ()) |> float_of_int) -. fst state.paddle.dim/.2., false) state))
+        Some (state, update_state dt ((fst (Graphics.mouse_pos ()) |> float_of_int) -. fst state.paddle.dim /. 2.0, false) state))
       (create_game_state (400., false))
 
       
