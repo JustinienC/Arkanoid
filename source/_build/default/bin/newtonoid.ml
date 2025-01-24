@@ -55,13 +55,20 @@ let draw_brick brick =
                     (int_of_float w) (int_of_float h)
 
 
-let draw_ball ball =
-  let (x, y) = ball.pos in
-  Graphics.set_color Graphics.white;
-  Graphics.fill_circle 
-    (int_of_float x) 
-    (int_of_float y) 
-    (int_of_float ball.radius)
+  let draw_balls balls = 
+    let rec draw_ball acc = 
+      if acc < List.length balls then 
+        let ball = List.nth balls acc in
+        let (x, y) = ball.pos in
+          Graphics.set_color Graphics.white;
+          Graphics.fill_circle 
+          (int_of_float x) 
+          (int_of_float y)
+          (int_of_float ball.radius);
+          draw_ball (acc + 1)
+      else ()
+    in let acc = 0 in draw_ball acc
+  
 
 let draw_paddle (paddle:etat_racket) =
   let (x, y) = paddle.pos in
@@ -81,7 +88,7 @@ let draw_state (state : etat)=
   (* Dessiner tous les éléments *)
   List.iter draw_brick state.bricks;
   draw_paddle state.paddle;
-  draw_ball state.ball;
+  draw_balls state.balls;
   List.iter draw_power state.power;
 
   (* Interface utilisateur *)

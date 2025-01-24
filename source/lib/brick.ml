@@ -167,36 +167,55 @@ module BrickSet = struct
     in
     create_rows spacing 0 []
 
-
   (* Fonction pour mettre à jour les briques en fonction des collisions avec la balle *)
   (* 
   Paramètres:
-
       bricks: liste de briques.
       ball: état de la balle.
-
     Retourne: une nouvelle liste de briques mise à jour. 
   *)
-
-  let update_bricks bricks ball =
-    let update_brick brick =
-      if Brick.check_collision brick ball then
-        match Brick.hit brick with
-        | new_brick when Brick.is_destroyed new_brick -> None
-        | new_brick -> Some new_brick
-      else Some brick
+  let update_bricks bricks balls =
+    let rec update_ball_bricks ball current_bricks acc =
+      match current_bricks with
+      | [] -> List.rev acc
+      | brick :: rest ->
+          let updated_brick = 
+            if Brick.check_collision brick ball then
+              match Brick.hit brick with
+              | new_brick when Brick.is_destroyed new_brick -> None
+              | new_brick -> Some new_brick
+            else Some brick
+          in
+          let new_acc = 
+            match updated_brick with
+            | Some b -> b :: acc
+            | None -> acc
+          in
+          update_ball_bricks ball rest new_acc
     in
-    List.filter_map update_brick bricks
+    let rec process_balls balls current_bricks =
+      match balls with
+      | [] -> current_bricks
+      | ball :: rest ->
+          let updated_bricks = update_ball_bricks ball current_bricks [] in
+          process_balls rest updated_bricks
+    in
+    process_balls balls bricks
 
-  (* Fonction pour obtenir les briques en collision avec la balle *)
-
-  (* 
-  Paramètres:
-      bricks: liste de briques.
-      ball: état de la balle.
-  Retourne: une liste de briques en collision avec la balle. 
-  *)
-
-  let get_colliding_bricks bricks ball =
-    List.filter (fun brick -> Brick.check_collision brick ball) bricks
+  (* Optimized get_colliding_bricks function *)
+  let get_colliding_bricks bricks balls =
+    let rec check_ball_collisions ball current_collisions =
+      let ball_collisions = 
+        List.filter (fun brick -> Brick.check_collision brick ball) bricks 
+      in
+      current_collisions @ ball_collisions
+    in
+    let rec process_balls balls collisions =
+      match balls with
+      | [] -> collisions
+      | ball :: rest ->
+          let ball_collisions = check_ball_collisions ball [] in
+          process_balls rest (collisions @ ball_collisions)
+    in
+    process_balls balls []
 end
