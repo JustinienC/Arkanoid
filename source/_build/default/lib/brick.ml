@@ -135,12 +135,13 @@ module BrickSet = struct
         if col_idx >= cols then acc
         else
           let brick_type = 
-            if Random.float 1.0 < 0.1 then 
+            if Random.float 1.0 < 0.2 then 
               Brick.PowerUp (
                 match Random.int 3 with
                 | 0 -> Brick.EnlargePaddle
                 | 1 -> Brick.SpeedUp
-                | _ -> Brick.MultiplyBall
+                | 2 -> Brick.MultiplyBall
+                | _ -> Brick.EnlargePaddle
               )
             else Brick.Normal
           in

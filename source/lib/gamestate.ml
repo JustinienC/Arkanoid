@@ -7,6 +7,7 @@ type etat = {
   paddle: etat_racket;
   bricks: Brick.brick list;
   power: Power.power list;
+  actif_power : Brick.power_up list;
   score: int;
   lives: int;
   running: bool;

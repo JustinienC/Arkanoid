@@ -46,7 +46,7 @@ let draw_brick brick =
   let (x, y) = Power.get_position power in
   let (w, h) = Power.get_dimensions power in
   Graphics.set_color (
-    match Power.getType power with
+    match Power.get_type power with
     | Brick.EnlargePaddle -> Graphics.red
     | Brick.SpeedUp -> Graphics.yellow
     | Brick.MultiplyBall -> Graphics.green

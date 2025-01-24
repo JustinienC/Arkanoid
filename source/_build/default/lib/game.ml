@@ -1,4 +1,3 @@
-
 open Iterator
 open Type
 open Brick
@@ -10,11 +9,11 @@ let game_hello () =
   print_endline "Bienvenue dans Newtonoid!"
 
 module BrickInit = struct
-  let rows =5
-  let cols=8
-  let brick_width=80.
-  let brick_height=20.
-  let spacing=10.
+  let rows =7
+  let cols=14
+  let brick_width=40.
+  let brick_height=10.
+  let spacing=15.
 end
 
 module Game = struct
@@ -34,8 +33,9 @@ module Game = struct
     };
     bricks = b;
     power = PowerSet.create_from_bricks b;
+    actif_power = [];
     score = 0;
-    lives = 3;
+    lives = 300;
     running = true
   }
 
@@ -100,8 +100,11 @@ module Game = struct
       (* Gestion des collisions avec les briques *)
       let colliding_bricks = BrickSet.get_colliding_bricks state.bricks ball_after_paddle in
       let new_bricks = BrickSet.update_bricks state.bricks ball_after_paddle in
+      let colliding_powers = PowerSet.get_colliding_powers state.power state.paddle in
       let new_power = PowerSet.update_powers state.paddle dt state.power new_bricks in
       let score_increment = List.length colliding_bricks * 10 in
+
+      let activatePower = List.map (fun power -> Power.get_type power) colliding_powers in
 
       let ball_after_bricks =
         if List.length colliding_bricks > 0 then
@@ -110,8 +113,24 @@ module Game = struct
           ball_after_paddle
       in
 
+      let ball_after_powers = 
+      if List.mem Brick.SpeedUp state.actif_power then
+        let (vx, vy) = ball_after_bricks.vel in
+        {ball_after_bricks with vel = (1.5 *. vx, 1.5 *. vy)}
+      else 
+        ball_after_bricks
+      in
+
+      let paddle_after_power = 
+        if List.mem Brick.EnlargePaddle state.actif_power then
+          let (dimx, dimy) = new_paddle.dim in
+          {new_paddle with dim = (dimx *. 1.5, dimy)}
+        else
+          new_paddle
+      in
+
       (* Vérification de la perte de la balle ou qu'il n'y a plus de brique*)
-      if snd ball_after_bricks.pos < snd initial_state.paddle.pos then
+      if snd ball_after_powers.pos < snd initial_state.paddle.pos then
         if state.lives <= 1 then
           begin
             (*show_defeat ();*)
@@ -129,10 +148,11 @@ module Game = struct
         end
       else
         { state with
-          ball = ball_after_bricks;
-          paddle = new_paddle;
+          ball = ball_after_powers;
+          paddle = paddle_after_power;
           bricks = new_bricks;
           power = new_power;
+          actif_power = activatePower;
           score = state.score + score_increment }
 
   
