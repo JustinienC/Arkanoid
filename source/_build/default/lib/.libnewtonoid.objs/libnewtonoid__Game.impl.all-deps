@@ -1,6 +1,8 @@
+libnewtonoid__Ball
+libnewtonoid__Bonus
 libnewtonoid__Brick
+libnewtonoid__Config
 libnewtonoid__Gamestate
 libnewtonoid__Iterator
-libnewtonoid__Menu
-libnewtonoid__Power
-libnewtonoid__Type
+libnewtonoid__Paddle
+libnewtonoid__Quadtree

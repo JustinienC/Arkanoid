@@ -1,4 +1,6 @@
-(* quadtree.ml *)
+open Brick
+open Ball
+
 module Quadtree = struct
   type bounds = {
     x: float;
@@ -7,116 +9,121 @@ module Quadtree = struct
     height: float;
   }
 
-  type 'a quadtree = {
-    bounds: bounds;
-    objects: 'a list;
-    nodes: 'a quadtree array option;
-    max_objects: int;
-    max_levels: int;
-    level: int;
-  }
+  type 'a node = 
+    | Empty
+    | Leaf of 'a list
+    | Branch of {
+        nw: 'a node;
+        ne: 'a node;
+        sw: 'a node;
+        se: 'a node;
+        bounds: bounds;
+      }
 
-  let create bounds max_objects max_levels = {
-    bounds;
-    objects = [];
-    nodes = None;
-    max_objects;
-    max_levels;
-    level = 0;
-  }
+  let create_bounds x y width height = 
+    { x; y; width; height }
 
-  let split qt =
-    let subWidth = qt.bounds.width /. 2. in
-    let subHeight = qt.bounds.height /. 2. in
-    let x = qt.bounds.x in
-    let y = qt.bounds.y in
-    
-    [|
-      (* Top right *)
-      {qt with 
-        bounds = {x = x +. subWidth; y = y +. subHeight; 
-                 width = subWidth; height = subHeight};
-        level = qt.level + 1;
-        objects = [];
-        nodes = None};
-      (* Top left *)
-      {qt with 
-        bounds = {x; y = y +. subHeight; 
-                 width = subWidth; height = subHeight};
-        level = qt.level + 1;
-        objects = [];
-        nodes = None};
-      (* Bottom left *)
-      {qt with 
-        bounds = {x; y; 
-                 width = subWidth; height = subHeight};
-        level = qt.level + 1;
-        objects = [];
-        nodes = None};
-      (* Bottom right *)
-      {qt with 
-        bounds = {x = x +. subWidth; y; 
-                 width = subWidth; height = subHeight};
-        level = qt.level + 1;
-        objects = [];
-        nodes = None}
-    |]
+  let inside_bounds obj bounds =
+    let (obj_x, obj_y) = Brick.get_position obj in
+    obj_x >= bounds.x && 
+    obj_x < bounds.x +. bounds.width &&
+    obj_y >= bounds.y && 
+    obj_y < bounds.y +. bounds.height
 
-  let get_index bounds object_bounds =
-    let vertical_midpoint = bounds.x +. (bounds.width /. 2.) in
-    let horizontal_midpoint = bounds.y +. (bounds.height /. 2.) in
-    
-    let top = object_bounds.y +. object_bounds.height > horizontal_midpoint in
-    let bottom = object_bounds.y < horizontal_midpoint in
-    let left = object_bounds.x < vertical_midpoint in
-    let right = object_bounds.x +. object_bounds.width > vertical_midpoint in
-    
-    match (top, bottom, left, right) with
-    | (true, false, false, true) -> Some 0  (* Top right *)
-    | (true, false, true, false) -> Some 1  (* Top left *)
-    | (false, true, true, false) -> Some 2  (* Bottom left *)
-    | (false, true, false, true) -> Some 3  (* Bottom right *)
-    | _ -> None  (* Object spans multiple quadrants *)
+  let rec insert tree obj =
+    match tree with
+    | Empty -> Leaf [obj]
+    | Leaf objs -> Leaf (obj :: objs)
+    | Branch { nw; ne; sw; se; bounds } ->
+        let nw_bounds = create_bounds bounds.x bounds.y (bounds.width /. 2.) (bounds.height /. 2.) in
+        let ne_bounds = create_bounds (bounds.x +. bounds.width /. 2.) bounds.y (bounds.width /. 2.) (bounds.height /. 2.) in
+        let sw_bounds = create_bounds bounds.x (bounds.y +. bounds.height /. 2.) (bounds.width /. 2.) (bounds.height /. 2.) in
+        let se_bounds = create_bounds (bounds.x +. bounds.width /. 2.) (bounds.y +. bounds.height /. 2.) (bounds.width /. 2.) (bounds.height /. 2.) in
 
-  let rec insert obj get_bounds qt =
-    match qt.nodes with
-    | Some nodes ->
-        (* Si on a des sous-nœuds, essayer d'insérer dans l'un d'eux *)
-        let obj_bounds = get_bounds obj in
-        (match get_index qt.bounds obj_bounds with
-         | Some i -> 
-             let new_nodes = Array.copy nodes in
-             new_nodes.(i) <- insert obj get_bounds nodes.(i);
-             {qt with nodes = Some new_nodes}
-         | None -> 
-             {qt with objects = obj :: qt.objects})
-    | None ->
-        (* Pas de sous-nœuds *)
-        if List.length qt.objects < qt.max_objects || qt.level >= qt.max_levels then
-          {qt with objects = obj :: qt.objects}
-        else begin
-          (* Créer des sous-nœuds et redistribuer les objets *)
-          let nodes = split qt in
-          let qt' = {qt with nodes = Some nodes; objects = []} in
-          let qt'' = List.fold_left 
-            (fun acc obj -> insert obj get_bounds acc)
-            qt'
-            (obj :: qt.objects) in
-          qt''
-        end
+        if inside_bounds obj nw_bounds then 
+          Branch { nw = insert nw obj; ne; sw; se; bounds }
+        else if inside_bounds obj ne_bounds then
+          Branch { nw; ne = insert ne obj; sw; se; bounds }
+        else if inside_bounds obj sw_bounds then
+          Branch { nw; ne; sw = insert sw obj; se; bounds }
+        else if inside_bounds obj se_bounds then
+          Branch { nw; ne; sw; se = insert se obj; bounds }
+        else tree
 
-  let rec retrieve target_bounds qt =
-    let result = ref qt.objects in
+  let rec build_quadtree bricks screen_bounds =
+    let ((x_min, y_min), (x_max, y_max)) = screen_bounds in
+    let tree_bounds = create_bounds x_min y_min (x_max -. x_min) (y_max -. y_min) in
+    let initial_branch = Branch { 
+      nw = Empty; 
+      ne = Empty; 
+      sw = Empty; 
+      se = Empty; 
+      bounds = tree_bounds 
+    } in
+    List.fold_left insert initial_branch bricks
+
+  (* let rec query tree ball =
+    let (ball_x, ball_y) = Ball.get_position ball in
+    let ball_radius = Ball.get_radius ball in
     
-    (match qt.nodes with
-     | Some nodes ->
-         (match get_index qt.bounds target_bounds with
-          | Some i -> result := List.append !result (retrieve target_bounds nodes.(i))
-          | None -> 
-              Array.iter 
-                (fun node -> result := List.append !result (retrieve target_bounds node))
-                nodes)
-     | None -> ());
-    
-    !result
+    let rec search_node node =
+      match node with
+      | Empty -> []
+      | Leaf objs -> 
+          List.filter (fun brick -> 
+            let bounds = Brick.get_bounds brick in
+            let ((bx1, by1), (bx2, by2)) = bounds in
+            
+            let x_overlap = 
+              ball_x +. ball_radius >= bx1 && 
+              ball_x -. ball_radius <= bx2 
+            in
+            let y_overlap = 
+              ball_y +. ball_radius >= by1 && 
+              ball_y -. ball_radius <= by2 
+            in
+
+            x_overlap && y_overlap
+          ) objs
+      | Branch { nw; ne; sw; se; bounds } ->
+          if ball_x +. ball_radius >= bounds.x && 
+             ball_x -. ball_radius <= bounds.x +. bounds.width &&
+             ball_y +. ball_radius >= bounds.y && 
+             ball_y -. ball_radius <= bounds.y +. bounds.height then
+            List.concat_map search_node [nw; ne; sw; se]
+          else
+            []
+    in
+    search_node tree *)
+
+    let rec query tree ball =
+      let (ball_x, ball_y) = Ball.get_position ball in
+      let ball_radius = Ball.get_radius ball in
+      
+      let rec search_node node =
+        match node with
+        | Empty -> ([], [])
+        | Leaf objs -> 
+            List.partition (fun brick -> 
+              let bounds = Brick.get_bounds brick in
+              let ((bx1, by1), (bx2, by2)) = bounds in
+              let x_overlap = ball_x +. ball_radius >= bx1 && ball_x -. ball_radius <= bx2 in
+              let y_overlap = ball_y +. ball_radius >= by1 && ball_y -. ball_radius <= by2 in
+              x_overlap && y_overlap
+            ) objs
+        | Branch { nw; ne; sw; se; bounds } ->
+            if ball_x +. ball_radius >= bounds.x && 
+               ball_x -. ball_radius <= bounds.x +. bounds.width &&
+               ball_y +. ball_radius >= bounds.y && 
+               ball_y -. ball_radius <= bounds.y +. bounds.height then
+              let nw_candidates, nw_non = search_node nw in
+              let ne_candidates, ne_non = search_node ne in
+              let sw_candidates, sw_non = search_node sw in
+              let se_candidates, se_non = search_node se in
+              (List.concat [nw_candidates; ne_candidates; sw_candidates; se_candidates],
+               List.concat [nw_non; ne_non; sw_non; se_non])
+            else
+              ([], [])
+      in
+      search_node tree
 end

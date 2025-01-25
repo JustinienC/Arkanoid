@@ -1,1 +1,1 @@
-lib/game.pp.ml: Brick BrickSet Flux Gamestate Graphics Iterator List Menu Power PowerSet Ppx_inline_test_lib Type
+lib/game.pp.ml: Ball Bonus Brick Config Flux Gamestate Graphics Iterator List Paddle Ppx_inline_test_lib Quadtree

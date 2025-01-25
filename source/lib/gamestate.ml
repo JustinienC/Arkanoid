@@ -98,7 +98,7 @@ let create_brick_grid rows cols brick_width brick_height spacing level =
           brick_height
           (match brick_type with
           | Brick.Reinforced n -> n
-          | Brick.Indestructible -> max_int
+          (* | Brick.Indestructible -> max_int *)
           | _ -> 1)
           (Config.base_bonus * level)
           brick_type
@@ -128,7 +128,7 @@ let create_brick_grid rows cols brick_width brick_height spacing level =
     let quadtree = Quadtree.build_quadtree bricks Config.screen_bounds in
     {
       ball = Ball.create 
-        Config.ball_initial_position
+        Config.ball_initial_vitesse
         (-.Config.initial_ball_speed, Config.initial_ball_speed)
         Config.ball_radius
         Config.ball_mass;
