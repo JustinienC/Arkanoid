@@ -30,6 +30,7 @@ module Gamestate = struct
 
     quadtree: Brick.t Quadtree.node; (* Arbre pour la détection des collisions *)
     bonus_items: Bonus.t list;
+    active_effects: (Brick.bonus_effect * float) list;
   }
 
   type brick_layout = {
@@ -61,6 +62,12 @@ let calculate_brick_layout brick_width brick_height screen_bounds spacing  : bri
   }
   
 
+  let update_active_effects dt state =
+    List.filter_map (fun (effect, duration) ->
+      let new_duration = max 0. (duration -. dt) in
+      if new_duration > 0. then Some (effect, new_duration) else None
+    ) state.active_effects
+    
   (* Création d'une grille de briques *)
 (* Fonction pour créer une grille de briques *)
 let create_brick_grid rows cols brick_width brick_height spacing level =

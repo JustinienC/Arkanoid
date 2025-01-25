@@ -98,6 +98,13 @@ let game_loop dt mouse_state (state:Gamestate.t) =
     updated_bonus_items
   in
 
+
+  let state_with_updated_effects = 
+    { state with 
+      active_effects = Gamestate.update_active_effects dt state 
+    } 
+  in
+
   (* Appliquer les effets bonus *)
   let new_paddle = 
     List.fold_left 
@@ -105,6 +112,67 @@ let game_loop dt mouse_state (state:Gamestate.t) =
       new_paddle
       collected_bonuses
   in
+
+
+  (* let pre_state =
+    List.fold_left (fun current_state (bonus:Bonus.t) ->
+      let state_with_life =
+        match (Bonus.get_effect bonus) with
+        | Brick.ExtraLife | Brick.RestoreLife ->
+            apply_bonus_life (Bonus.get_effect bonus) current_state
+        | _ -> current_state
+      in
+      
+      let state_with_score =
+        match (Bonus.get_effect bonus) with
+        | Brick.ScoreBonus _ ->
+            apply_bonus_score (Bonus.get_effect bonus) state_with_life
+        | _ -> state_with_life
+      in
+      
+      let updated_effects =
+        match Bonus.get_effect bonus with
+        | Brick.StretchPaddle | Brick.ShrinkPaddle ->
+            (* Remove existing stretch/shrink effects before adding *)
+            let filtered_effects = 
+              List.filter (fun (e, _) -> 
+                e <> Brick.StretchPaddle && e <> Brick.ShrinkPaddle
+              ) current_state.active_effects
+            in
+            (Bonus.get_effect bonus, Config.bonus_effect_duration) :: filtered_effects
+        | _ -> current_state.active_effects
+      in
+      
+      let state_with_ball_effect =
+        { state_with_score with
+          ball = Ball.apply_effect (Bonus.get_effect bonus) state_with_score.ball;
+          active_effects = updated_effects
+        }
+      in
+      
+      state_with_ball_effect
+    ) state_with_updated_effects collected_bonuses
+  in *)
+(* 
+  let final_state = 
+    let has_stretch_shrink_effect = 
+      List.exists (fun (effect, duration) -> 
+        (effect = Brick.StretchPaddle || effect = Brick.ShrinkPaddle) && duration > 0.
+      ) pre_state.active_effects 
+    in
+    
+    if not has_stretch_shrink_effect then
+      { pre_state with 
+        paddle = Paddle.create 
+          Config.paddle_position 
+          Config.paddle_width 
+          Config.paddle_height 
+          Config.paddle_velocity
+      }
+    else 
+      pre_state
+
+    in  *)
 
   (*etat avec bonus*)
   let pre_state = 
@@ -130,7 +198,7 @@ let game_loop dt mouse_state (state:Gamestate.t) =
       in
       
       state_with_ball_effect
-    ) state collected_bonuses
+    ) state_with_updated_effects collected_bonuses
   in
 
     (* Vérification de la perte de la balle *)

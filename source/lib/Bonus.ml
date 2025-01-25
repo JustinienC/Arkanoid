@@ -14,6 +14,7 @@ module type BONUS= sig
   val apply_effect : t -> Paddle.t -> Paddle.t
   val check_collision : t -> Paddle.t -> bool
   val get_effect : t -> Brick.bonus_effect
+  val is_effect_active: t -> bool
 end
 
 module Bonus : BONUS = struct
@@ -23,6 +24,7 @@ module Bonus : BONUS = struct
     velocity: float;
     effect: Brick.bonus_effect;
     lifetime: float; 
+    effect_duration: float;  (* New field to track effect duration *)
   
 
   }
@@ -32,12 +34,13 @@ module Bonus : BONUS = struct
     velocity = Config.bonus_velocity;  
     effect = effect;
     lifetime = Config.bonus_lifetime;  
+    effect_duration= Config.bonus_lifetime; 
   }
 
   let update dt bonus = {
     bonus with 
     position = (fst bonus.position, snd bonus.position -. bonus.velocity *. dt);
-    lifetime = bonus.lifetime -. dt;
+    lifetime =max 0. (bonus.lifetime -. dt);
   }
 
   let get_effect bonus = bonus.effect
@@ -47,7 +50,8 @@ module Bonus : BONUS = struct
     let (_, y) = bonus.position in
     bonus.lifetime <= 0. || y <= snd Config.paddle_position 
   let get_position bonus = bonus.position
-
+  
+  let is_effect_active bonus = bonus.effect_duration > 0.
   let get_dimensions _ = Config.bonus_dimensions
   let get_bounds bonus =
     let (x, y) = bonus.position in
