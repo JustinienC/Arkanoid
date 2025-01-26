@@ -47,6 +47,8 @@ module type BALL = sig
 
   val handle_brick_collision : t -> float * float -> t
 
+  val get_mass : t -> float
+
 end
 
 
@@ -129,6 +131,8 @@ module Ball : BALL = struct
 
   let get_radius ball = ball.radius
 
+  let get_mass ball = ball.mass
+
   let set_velocity new_velocity ball  = 
     { ball with velocity = new_velocity }
 
@@ -159,83 +163,42 @@ module Ball : BALL = struct
     { ball with velocity = (new_vx, new_vy) }
 
   (* Gestion des collisions avec les murs *)
-(* Gestion des collisions avec les murs *)
-(* let handle_wall_collision ball screen_bounds =
+let handle_wall_collision ball screen_bounds =
   let (x, y) = ball.position
   and (vx, vy) = ball.velocity in
   let ((min_x, min_y), (max_x, max_y)) = screen_bounds in
   
-  (* Coefficient de restitution (perte d'énergie à l'impact) *)
-  let restitution = 1.0 in
+  let current_speed = sqrt(vx *. vx +. vy *. vy) in
   
-  (* Petite variation aléatoire (-0.05 à 0.05) *)
-  let random_variation () = (Random.float 0.1) -. 0.05 in
-  
-  let (new_x, new_vx) = 
+  (* Rebonds sur les murs latéraux *)
+  let (new_x, new_vx, new_vy) = 
     if x -. ball.radius < min_x then 
-      (min_x +. ball.radius, -. vx *. restitution *. (1. +. random_variation ()))
+      let angle = Float.pi /. 6. +. Random.float (Float.pi /. 6.) in
+      (min_x +. ball.radius, 
+       current_speed *. cos angle,
+       -. current_speed *. sin angle)
     else if x +. ball.radius > max_x then 
-      (max_x -. ball.radius, -. vx *. restitution *. (1. +. random_variation ()))
+      let angle = Float.pi -. (Float.pi /. 6. +. Random.float (Float.pi /. 6.)) in
+      (max_x -. ball.radius, 
+       current_speed *. cos angle,
+       -. current_speed *. sin angle)
     else 
-      (x, vx)
+      (x, vx, vy)
   in
   
-  let (new_y, new_vy) = 
-    if y -. ball.radius < min_y then
-      (min_y +. ball.radius, -. vy *. restitution *. (1. +. random_variation ()))
-    else if y +. ball.radius > max_y then
-      (max_y -. ball.radius, -. vy *. restitution *. (1. +. random_variation ()))
-    else 
-      (y, vy)
-  in
-  
-  (* Évite les trajectoires purement horizontales ou verticales *)
-  let adjusted_vx = 
-    if abs_float new_vx < 0.1 then new_vx +. (if new_vx < 0. then -0.1 else 0.1) else new_vx
-  in
-  let adjusted_vy = 
-    if abs_float new_vy < 0.1 then new_vy +. (if new_vy < 0. then -0.1 else 0.1) else new_vy
+  (* Rebond pour le mur du haut uniquement *)
+  let (new_y, final_vy) = 
+    if y +. ball.radius > max_y then
+      (max_y -. ball.radius, -.abs_float new_vy)
+    else
+      (y, new_vy)
   in
   
   { ball with 
     position = (new_x, new_y);
-    velocity = (adjusted_vx, adjusted_vy) 
+    velocity = (new_vx, final_vy)
   }
-   *)
 
-   let handle_wall_collision ball screen_bounds =
-    let (x, y) = ball.position
-    and (vx, vy) = ball.velocity in
-    let ((min_x, min_y), (max_x, max_y)) = screen_bounds in
-    
-    (* Rebonds simples sur les murs latéraux *)
-    let (new_x, new_vx) = 
-      if x -. ball.radius < min_x then 
-        (min_x +. ball.radius, -.vx*.1.1+.10.0)
-      else if x +. ball.radius > max_x then 
-        (max_x -. ball.radius, -.vx)
-      else 
-        (x, vx)
-    in
-    
-    (* Rebond avec angle pour le mur du haut *)
-    let (new_y, new_vy) = 
-      if y +. ball.radius > max_y then
-        let current_speed = sqrt(vx *. vx +. vy *. vy) in
-        (* Angle de rebond entre 45° et 60° *)
-        let angle = Float.pi /. 4. +. Random.float (Float.pi /. 6.) in
-        (* Position ajustée *)
-        (max_y -. ball.radius, -. current_speed *. cos angle)
-      else if y -. ball.radius < min_y then
-        (min_y +. ball.radius, -.vy)
-      else 
-        (y, vy)
-    in
-    
-    { ball with 
-      position = (new_x, new_y);
-      velocity = (new_vx, new_vy)
-    }
   (* Collision avec la raquette avec angle variable *)
   let handle_paddle_collision ball (px, py) (pw, ph) screen_bounds =
     let (ball_x, ball_y) = ball.position 
@@ -257,7 +220,7 @@ module Ball : BALL = struct
       
       (* Conservation de la vitesse totale *)
       let current_speed = sqrt (vx *. vx +. vy *. vy) in
-      let new_speed = current_speed *. 1.1 in (* Léger boost *)
+      let new_speed = current_speed *. 1.0 in (* Léger boost *)
       
       (* Nouvelle trajectoire *)
       let new_vy = abs_float (new_speed *. cos (Float.pi /. 4. *. angle_multiplier)) in

@@ -11,7 +11,9 @@ module Config = struct
 
   let paddle_velocity = 10.
 
-  let ball_initial_vitesse = (200., 250.)
+
+  let paddle_stretch_factor = 1.1
+  let paddle_shrink_factor = 0.75
   let ball_radius = 5.
   let ball_mass = 0.85
   let initial_ball_speed = 400.
@@ -24,8 +26,10 @@ module Config = struct
   let screen_bounds =  ((0., 0.), (790., 590.))
 
   let bonus_velocity = 200.
-  let bonus_lifetime = 12.
+  let bonus_lifetime = 3.
 
   let bonus_dimensions = (20., 12.)
+
+  let ball_factor = 1.1
 
 end

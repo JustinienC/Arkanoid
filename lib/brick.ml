@@ -94,13 +94,39 @@ module Brick : BRICK = struct
   let hit brick = 
     match brick.brick_type with
     | Indestructible -> Some brick
-    | _ ->  Some { brick with health = brick.health - 1}
+    | _ ->  Some { brick with health = (brick.health - 1)}
+
+
+(* 
+    let hit brick =
+      match brick.brick_type with
+      | Reinforced n ->
+          let new_health = max 0 (brick.health - 1) in
+          let new_brick = {
+            brick with
+            health = new_health;
+            brick_type = if new_health = 0 then Classic else Reinforced n
+          } in
+          Some new_brick
+      | _ -> Some { brick with health = max 0 (brick.health - 1) }
+    
+    let is_destroyed brick =
+      Printf.printf "IS_DESTROYED: Type %s, Health %d\n"
+        (match brick.brick_type with
+        | Reinforced n -> Printf.sprintf "Reinforced(%d)" n
+        | _ -> "Other")
+        brick.health;
+      flush stdout;
+      match brick.brick_type with
+      | Indestructible -> false
+      | Reinforced _ -> brick.health = 0
+      | _ -> brick.health <= 0 *)
 
   let is_destroyed brick =
-    match brick.brick_type with
-    | Indestructible -> false
-    | _ -> brick.health <= 0
-    
+            match brick.brick_type with
+            | Indestructible -> false
+            | _ -> brick.health <= 0
+
   let get_value brick =  
     if is_destroyed brick then 
         let base_value = brick.value in
@@ -109,12 +135,7 @@ module Brick : BRICK = struct
           | Reinforced hits -> base_value * hits
           | _ -> base_value
         in
-        (* let bonus_value = 
-          match brick.brick_type with
-          | Bonus (ScoreBonus bonus) -> reinforced_value + bonus
-          | _ -> reinforced_value
-        in *)
-        reinforced_value
+        base_value
       else
         0
 

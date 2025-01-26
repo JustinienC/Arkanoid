@@ -42,7 +42,7 @@ let draw_brick brick =
   let (w, h) = Brick.get_dimensions brick in
   Graphics.set_color (
     match Brick.get_type brick with
-    | Brick.Reinforced _ -> Graphics.rgb 128 0 128 
+    | Brick.Reinforced _ -> Graphics.green
     | Brick.Indestructible -> Graphics.rgb 105 105 105
     | Brick.Explosive -> Graphics.rgb 255 69 0 
     | Brick.Bonus bonus_effect ->
@@ -86,8 +86,8 @@ let draw_effects  (etat : Gamestate.t) =
             | Brick.ShrinkPaddle -> Graphics.black
             | Brick.ExtraLife -> Graphics.green
             | Brick.RestoreLife -> Graphics.yellow
-            | Brick.MultiplyBall -> Graphics.magenta
-            | Brick.ScoreBonus _ -> Graphics.white
+            | Brick.MultiplyBall -> Graphics.white
+            | Brick.ScoreBonus _ -> Graphics.rgb 255 215 212
             | _ -> Graphics.blue
           );
           Graphics.fill_rect 

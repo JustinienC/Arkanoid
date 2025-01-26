@@ -62,40 +62,6 @@ module Quadtree = struct
     } in
     List.fold_left insert initial_branch bricks
 
-  (* let rec query tree ball =
-    let (ball_x, ball_y) = Ball.get_position ball in
-    let ball_radius = Ball.get_radius ball in
-    
-    let rec search_node node =
-      match node with
-      | Empty -> []
-      | Leaf objs -> 
-          List.filter (fun brick -> 
-            let bounds = Brick.get_bounds brick in
-            let ((bx1, by1), (bx2, by2)) = bounds in
-            
-            let x_overlap = 
-              ball_x +. ball_radius >= bx1 && 
-              ball_x -. ball_radius <= bx2 
-            in
-            let y_overlap = 
-              ball_y +. ball_radius >= by1 && 
-              ball_y -. ball_radius <= by2 
-            in
-
-            x_overlap && y_overlap
-          ) objs
-      | Branch { nw; ne; sw; se; bounds } ->
-          if ball_x +. ball_radius >= bounds.x && 
-             ball_x -. ball_radius <= bounds.x +. bounds.width &&
-             ball_y +. ball_radius >= bounds.y && 
-             ball_y -. ball_radius <= bounds.y +. bounds.height then
-            List.concat_map search_node [nw; ne; sw; se]
-          else
-            []
-    in
-    search_node tree *)
-
     let rec query tree ball =
       let (ball_x, ball_y) = Ball.get_position ball in
       let ball_radius = Ball.get_radius ball in

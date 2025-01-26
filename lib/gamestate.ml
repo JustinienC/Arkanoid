@@ -31,6 +31,7 @@ module Gamestate = struct
     quadtree: Brick.t Quadtree.node; (* Arbre pour la détection des collisions *)
     bonus_items: Bonus.t list;
     active_effects: (Brick.bonus_effect * float) list;
+    active_ball_effects: (Brick.bonus_effect * float) list; (*pour la ball*)
   }
 
   type brick_layout = {
@@ -62,12 +63,7 @@ let calculate_brick_layout brick_width brick_height screen_bounds spacing  : bri
   }
   
 
-  let update_active_effects dt state =
-    List.filter_map (fun (effect, duration) ->
-      let new_duration = max 0. (duration -. dt) in
-      if new_duration > 0. then Some (effect, new_duration) else None
-    ) state.active_effects
-    
+ 
   (* Création d'une grille de briques *)
 (* Fonction pour créer une grille de briques *)
 let create_brick_grid rows cols brick_width brick_height spacing level =
@@ -77,25 +73,25 @@ let create_brick_grid rows cols brick_width brick_height spacing level =
       if col_idx >= cols then acc
       else
         let brick_type = 
-          let r = Random.float 1.0 in
+          let r = 0.4 in
           if r < 0.1 then 
             Brick.Bonus (
-              match Random.int 8 with
-              | 0-> Brick.StretchPaddle
-              | 1 -> Brick.ShrinkPaddle
-              | 2 -> Brick.SpeedUpBall
+              match Random.int 1 with
+              (* | 0-> Brick.StretchPaddle
+              | 1 -> Brick.ShrinkPaddle *)
+              | 2 -> Brick.SpeedUpBall 
               | 3 -> Brick.SlowDownBall
               | 4 -> Brick.ExtraLife
               | 5 -> Brick.RestoreLife
-              | 6 -> Brick.MultiplyBall
+              (* | 6 -> Brick.MultiplyBall *)
               | _ -> Brick.ScoreBonus (Random.int 100)
             )
-          else if r < 0.2 then
+          (* else if r < 0.2 then
             Explosive
-          (* else if r < 0.3 then
+          else if r < 0.3 then
             Indestructible *)
           else if r < 0.5 then
-            Reinforced (Random.int 5 + 1)
+            Reinforced 2
           else
             Classic
         in
@@ -135,7 +131,8 @@ let create_brick_grid rows cols brick_width brick_height spacing level =
     let quadtree = Quadtree.build_quadtree bricks Config.screen_bounds in
     {
       ball = Ball.create 
-        Config.ball_initial_vitesse
+      (fst Config.paddle_position +. Config.paddle_width /. 2., 
+      snd Config.paddle_position +. Config.paddle_height  +. 10.)
         (-.Config.initial_ball_speed, Config.initial_ball_speed)
         Config.ball_radius
         Config.ball_mass;
@@ -149,6 +146,8 @@ let create_brick_grid rows cols brick_width brick_height spacing level =
 
       quadtree;
       bonus_items = [];
+      active_effects = [];
+      active_ball_effects = [];  (* Initialisation du nouveau champ *)
     }
 
 end
