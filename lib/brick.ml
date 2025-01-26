@@ -135,7 +135,7 @@ module Brick : BRICK = struct
           | Reinforced hits -> base_value * hits
           | _ -> base_value
         in
-        base_value
+        reinforced_value
       else
         0
 

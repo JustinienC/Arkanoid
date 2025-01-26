@@ -73,7 +73,7 @@ let create_brick_grid rows cols brick_width brick_height spacing level =
       if col_idx >= cols then acc
       else
         let brick_type = 
-          let r = 0.4 in
+          let r = Random.float 1.0 in
           if r < 0.1 then 
             Brick.Bonus (
               match Random.int 1 with
@@ -91,7 +91,7 @@ let create_brick_grid rows cols brick_width brick_height spacing level =
           else if r < 0.3 then
             Indestructible *)
           else if r < 0.5 then
-            Reinforced 2
+            Reinforced (Random.int 2 + 2)
           else
             Classic
         in

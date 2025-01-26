@@ -6,7 +6,6 @@ module type BALL = sig
   
 
   (* Crée une nouvelle balle *)
-(*position->velocity->radius->mass->*)
   val create : (float * float) ->  (float * float) -> float -> float -> t
 
   (* Met à jour la position et la vitesse de la balle *)
@@ -14,14 +13,12 @@ module type BALL = sig
   val update : float -> float -> t -> t
 
   (* Gère les rebonds *)
-  (* wall_bounds*paddle_bounds -> t -> t *)
   val bounce : (float * float) * (float * float) -> (float * float) * (float * float) -> t -> t
 
   (* Application d'effets spéciaux *)
   val apply_effect : Brick.bonus_effect -> t -> t
 
   (* Vérifie si la balle est perdue *)
-  (*wall_bounds->t>bool*)
   val is_lost : (float * float) * (float * float) -> t -> bool
 
   (* Récupère la position actuelle *)
@@ -30,6 +27,7 @@ module type BALL = sig
   (* Récupère la vitesse actuelle *)
   val get_velocity : t -> float * float
 
+  (*recupère le rayon*)
   val get_radius : t -> float
 
   (* Récupère les limites de la balle *)
